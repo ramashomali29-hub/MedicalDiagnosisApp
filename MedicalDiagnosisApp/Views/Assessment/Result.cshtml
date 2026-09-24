@@ -1,0 +1,369 @@
+﻿@model MedicalDiagnosisApp.Models.AssessmentResultViewModel
+
+@{
+    ViewData["Title"] = "Assessment Result";
+}
+
+<div class="result-page">
+    @if (Model.IsEmergency)
+    {
+        <div class="emergency-card">
+            <div class="emergency-icon">!</div>
+
+            <h1>@Model.PossibleCondition</h1>
+
+            <p>@Model.Description</p>
+
+            <div class="emergency-action">
+                @Model.Recommendation
+            </div>
+
+            <p class="disclaimer">
+                Do not rely on this website during a medical emergency.
+            </p>
+
+            <a asp-controller="Assessment"
+               asp-action="Index"
+               class="restart-button">
+                Start New Assessment
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="result-card">
+            <div class="result-heading">
+                <div>
+                    <span class="result-label">
+                        HIGHEST SYMPTOM MATCH
+                    </span>
+
+                    <h1>@Model.PossibleCondition</h1>
+
+                    <p>@Model.Description</p>
+                </div>
+
+                <div class="score-circle">
+                    <strong>
+                        @Model.MatchPercentage.ToString("0")%
+                    </strong>
+
+                    <span>match</span>
+                </div>
+            </div>
+
+            <div class="result-warning">
+                This percentage represents symptom matching only.
+                It is not the probability that you have this condition.
+            </div>
+
+            <div class="result-columns">
+                <section>
+                    <h2>Your selected symptoms</h2>
+
+                    <div class="selected-list">
+                        @foreach (var symptom in Model.SelectedSymptoms)
+                        {
+                            <span>✓ @symptom</span>
+                        }
+                    </div>
+                </section>
+
+                <section>
+                    <h2>Suggested next step</h2>
+
+                    <div class="recommendation">
+                        @Model.Recommendation
+                    </div>
+                </section>
+            </div>
+
+            <section class="comparison-section">
+                <h2>Symptom match comparison</h2>
+
+                @foreach (var result in Model.Scores)
+                {
+                    <div class="score-row">
+                        <div class="score-title">
+                            <span>@result.DiseaseName</span>
+                            <strong>
+                                @result.Score.ToString("0")%
+                            </strong>
+                        </div>
+
+                        <div class="progress-track">
+                            <div class="progress-value"
+                                 style="width: @result.Score.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%">
+                            </div>
+                        </div>
+                    </div>
+                }
+            </section>
+
+            <div class="medical-disclaimer">
+                <strong>Medical disclaimer:</strong>
+                This result is an educational preliminary assessment.
+                Symptoms may overlap between many conditions. Only a
+                qualified healthcare professional can provide a diagnosis.
+            </div>
+
+            <div class="result-buttons">
+                <a asp-controller="Assessment"
+                   asp-action="Index"
+                   class="restart-button">
+                    Start New Assessment
+                </a>
+
+                <button type="button"
+                        class="print-button"
+                        onclick="window.print()">
+                    Print Result
+                </button>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    body {
+        background: #f3f8fa;
+    }
+
+    .result-page {
+        max-width: 950px;
+        margin: 38px auto;
+        padding: 0 20px;
+    }
+
+    .result-card,
+    .emergency-card {
+        padding: 38px;
+        border: 1px solid #dfeaec;
+        border-radius: 18px;
+        background: white;
+        box-shadow: 0 10px 35px rgba(18, 77, 90, 0.09);
+    }
+
+    .result-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 25px;
+        padding-bottom: 25px;
+        border-bottom: 1px solid #e3edef;
+    }
+
+    .result-label {
+        color: #087f8c;
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 1px;
+    }
+
+    .result-heading h1 {
+        margin: 7px 0;
+        color: #164e59;
+        font-size: 34px;
+    }
+
+    .result-heading p {
+        max-width: 590px;
+        margin: 0;
+        color: #607a80;
+        line-height: 1.6;
+    }
+
+    .score-circle {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 125px;
+        height: 125px;
+        flex-shrink: 0;
+        border: 10px solid #cceceb;
+        border-radius: 50%;
+        background: #edfbfa;
+        color: #087f8c;
+    }
+
+    .score-circle strong {
+        font-size: 30px;
+    }
+
+    .score-circle span {
+        color: #55777d;
+    }
+
+    .result-warning,
+    .medical-disclaimer {
+        margin: 22px 0;
+        padding: 15px 17px;
+        border-radius: 9px;
+        background: #fff8df;
+        color: #705916;
+    }
+
+    .result-columns {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 22px;
+        margin: 30px 0;
+    }
+
+    section h2 {
+        color: #234d55;
+        font-size: 19px;
+    }
+
+    .selected-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .selected-list span {
+        padding: 10px 13px;
+        border-radius: 8px;
+        background: #edf8f7;
+        color: #24636b;
+    }
+
+    .recommendation {
+        padding: 18px;
+        border-left: 4px solid #087f8c;
+        border-radius: 8px;
+        background: #edf8f7;
+        color: #345e65;
+        line-height: 1.6;
+    }
+
+    .comparison-section {
+        margin-top: 30px;
+    }
+
+    .score-row {
+        margin: 17px 0;
+    }
+
+    .score-title {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 7px;
+        color: #3f6167;
+    }
+
+    .progress-track {
+        height: 11px;
+        overflow: hidden;
+        border-radius: 20px;
+        background: #e2ecee;
+    }
+
+    .progress-value {
+        height: 100%;
+        border-radius: 20px;
+        background: #087f8c;
+    }
+
+    .result-buttons {
+        display: flex;
+        gap: 12px;
+        margin-top: 25px;
+    }
+
+    .restart-button,
+    .print-button {
+        padding: 12px 20px;
+        border-radius: 9px;
+        text-decoration: none;
+        font-weight: 650;
+        cursor: pointer;
+    }
+
+    .restart-button {
+        border: none;
+        background: #087f8c;
+        color: white;
+    }
+
+    .print-button {
+        border: 1px solid #bdcfd2;
+        background: white;
+        color: #365e65;
+    }
+
+    .emergency-card {
+        text-align: center;
+        border-color: #efb1b1;
+    }
+
+    .emergency-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 78px;
+        height: 78px;
+        margin: 0 auto 18px;
+        border-radius: 50%;
+        background: #c62828;
+        color: white;
+        font-size: 48px;
+        font-weight: bold;
+    }
+
+    .emergency-card h1 {
+        color: #a61f1f;
+    }
+
+    .emergency-card p {
+        color: #694d4d;
+    }
+
+    .emergency-action {
+        margin: 25px 0;
+        padding: 20px;
+        border-radius: 10px;
+        background: #ffe4e4;
+        color: #951f1f;
+        font-size: 19px;
+        font-weight: bold;
+    }
+
+    .disclaimer {
+        margin-bottom: 25px;
+    }
+
+    @@media (max-width: 700px) {
+        .result-card,
+        .emergency-card {
+            padding: 23px;
+        }
+
+        .result-heading {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .result-columns {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media print {
+        header,
+        footer,
+        .result-buttons {
+            display: none !important;
+        }
+
+        body {
+            background: white;
+        }
+
+        .result-card {
+            border: none;
+            box-shadow: none;
+        }
+    }
+</style>

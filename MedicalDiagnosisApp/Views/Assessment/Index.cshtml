@@ -1,0 +1,578 @@
+﻿@model MedicalDiagnosisApp.Models.AssessmentViewModel
+
+@{
+    ViewData["Title"] =
+        Model.Stage == 1
+            ? "General Symptoms"
+            : "Detailed Symptoms";
+
+    var categoryOrder = new[]
+    {
+        "Chest & Heart",
+        "Head & Neurological",
+        "Breathing",
+        "Energy & General",
+        "Weight, Hunger & Thirst",
+        "Digestive",
+        "Skin, Hair & Temperature"
+    };
+
+    var categoryDescriptions =
+        new Dictionary<string, string>
+        {
+            ["Chest & Heart"] =
+                "Select any chest or heartbeat symptoms.",
+
+            ["Head & Neurological"] =
+                "Select any head, vision or balance symptoms.",
+
+            ["Breathing"] =
+                "Select any breathing-related symptoms.",
+
+            ["Energy & General"] =
+                "Select symptoms related to energy and weakness.",
+
+            ["Weight, Hunger & Thirst"] =
+                "Select changes in weight, thirst or appetite.",
+
+            ["Digestive"] =
+                "Select any stomach or digestive symptoms.",
+
+            ["Skin, Hair & Temperature"] =
+                "Select changes involving skin, hair or temperature."
+        };
+}
+
+<div class="assessment-page">
+    <div class="medical-card">
+
+        <div class="medical-header">
+            <div class="medical-icon">+</div>
+
+            <div>
+                <h1>Medical Symptom Assessment</h1>
+
+                <p>
+                    Select the symptoms you are currently experiencing.
+                </p>
+            </div>
+        </div>
+
+        <div class="medical-warning">
+            <strong>Important:</strong>
+            This tool provides a preliminary symptom match only.
+            It does not replace professional medical diagnosis.
+        </div>
+
+        <div class="steps">
+            <div class="step @(Model.Stage == 1 ? "active" : "complete")">
+                <span>1</span>
+                Symptom areas
+            </div>
+
+            <div class="step @(Model.Stage == 2 ? "active" : "")">
+                <span>2</span>
+                Detailed assessment
+            </div>
+
+            <div class="step">
+                <span>3</span>
+                Result
+            </div>
+        </div>
+
+        @if (TempData["Error"] != null)
+        {
+            <div class="error-message">
+                @TempData["Error"]
+            </div>
+        }
+
+        @if (Model.Stage == 1)
+        {
+            <form asp-controller="Assessment"
+                  asp-action="Details"
+                  method="post">
+
+                <div class="section-heading">
+                    <h2>How are you feeling?</h2>
+
+                    <p>
+                        Review the seven symptom areas and select
+                        everything that applies to you.
+                    </p>
+                </div>
+
+                <div class="symptom-sections">
+                    @foreach (var category in categoryOrder)
+                    {
+                        var categorySymptoms = Model.Symptoms
+                            .Where(x => x.Category == category)
+                            .ToList();
+
+                        if (categorySymptoms.Count > 0)
+                        {
+                            var icon = category switch
+                            {
+                                "Chest & Heart" => "♥",
+                                "Head & Neurological" => "●",
+                                "Breathing" => "⌁",
+                                "Energy & General" => "⚡",
+                                "Weight, Hunger & Thirst" => "◉",
+                                "Digestive" => "◆",
+                                "Skin, Hair & Temperature" => "✦",
+                                _ => "+"
+                            };
+
+                            <section class="symptom-section">
+                                <div class="category-heading">
+                                    <div class="category-icon">
+                                        @icon
+                                    </div>
+
+                                    <div>
+                                        <h3>
+                                            @category Symptoms
+                                        </h3>
+
+                                        <p>
+                                            @categoryDescriptions[category]
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="category-options">
+                                    @foreach (
+                                        var symptom
+                                        in categorySymptoms)
+                                    {
+                                        <label class="symptom-option">
+                                            <input type="checkbox"
+                                                   name="selectedSymptomIds"
+                                                   value="@symptom.Id" />
+
+                                            <span class="option-checkbox">
+                                                ✓
+                                            </span>
+
+                                            <span class="symptom-name">
+                                                @symptom.Name
+                                            </span>
+                                        </label>
+                                    }
+                                </div>
+                            </section>
+                        }
+                    }
+                </div>
+
+                <div class="form-buttons">
+                    <button type="submit"
+                            class="primary-button">
+                        Next: Detailed Assessment →
+                    </button>
+                </div>
+            </form>
+        }
+        else
+        {
+            <form asp-controller="Assessment"
+                  asp-action="Complete"
+                  method="post">
+
+                @foreach (var id in Model.SelectedSymptomIds)
+                {
+                    <input type="hidden"
+                           name="generalSymptomIds"
+                           value="@id" />
+                }
+
+                <div class="section-heading">
+                    <h2>Tell us more</h2>
+
+                    <p>
+                        Answer these follow-up questions to improve
+                        the symptom match.
+                    </p>
+                </div>
+
+                @if (Model.Symptoms.Count > 0)
+                {
+                    var detailGroups = Model.Symptoms
+                        .GroupBy(x => x.Category)
+                        .ToList();
+
+                    <div class="detail-sections">
+                        @foreach (var group in detailGroups)
+                        {
+                            var title = group.Key
+                                .Replace(" Details", "");
+
+                            <section class="detail-section">
+                                <div class="detail-heading">
+                                    <span>?</span>
+
+                                    <div>
+                                        <h3>@title Follow-up Questions</h3>
+
+                                        <p>
+                                            Select all statements
+                                            that apply to you.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="category-options">
+                                    @foreach (var symptom in group)
+                                    {
+                                        <label class="symptom-option">
+                                            <input type="checkbox"
+                                                   name="detailedSymptomIds"
+                                                   value="@symptom.Id" />
+
+                                            <span class="option-checkbox">
+                                                ✓
+                                            </span>
+
+                                            <span class="symptom-name">
+                                                @symptom.Name
+                                            </span>
+                                        </label>
+                                    }
+                                </div>
+                            </section>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="information-message">
+                        No additional questions are needed.
+                        Press Done to view your result.
+                    </div>
+                }
+
+                <div class="form-buttons">
+                    <a asp-controller="Assessment"
+                       asp-action="Index"
+                       class="secondary-button">
+                        ← Back
+                    </a>
+
+                    <button type="submit"
+                            class="primary-button">
+                        Done — View Result
+                    </button>
+                </div>
+            </form>
+        }
+    </div>
+</div>
+
+<style>
+    body {
+        background: #f3f8fa;
+    }
+
+    .assessment-page {
+        max-width: 1150px;
+        margin: 35px auto;
+        padding: 0 20px;
+    }
+
+    .medical-card {
+        padding: 38px;
+        background: white;
+        border: 1px solid #dfeaec;
+        border-radius: 18px;
+        box-shadow: 0 10px 35px rgba(18, 77, 90, 0.09);
+    }
+
+    .medical-header {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        padding-bottom: 25px;
+        border-bottom: 1px solid #e4edef;
+    }
+
+    .medical-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 58px;
+        height: 58px;
+        flex-shrink: 0;
+        border-radius: 16px;
+        background: #087f8c;
+        color: white;
+        font-size: 42px;
+        line-height: 1;
+    }
+
+    .medical-header h1 {
+        margin: 0 0 5px;
+        color: #164e59;
+        font-size: 30px;
+        font-weight: 750;
+    }
+
+    .medical-header p {
+        margin: 0;
+        color: #647b80;
+    }
+
+    .medical-warning {
+        margin: 22px 0;
+        padding: 15px 18px;
+        border-left: 4px solid #e3a008;
+        border-radius: 8px;
+        background: #fff8df;
+        color: #6e5410;
+    }
+
+    .steps {
+        display: flex;
+        gap: 12px;
+        margin: 28px 0 35px;
+    }
+
+    .step {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        flex: 1;
+        padding: 12px;
+        border-radius: 10px;
+        background: #edf3f4;
+        color: #789095;
+        font-weight: 600;
+    }
+
+    .step span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #cad7d9;
+        color: white;
+    }
+
+    .step.active {
+        background: #dff4f3;
+        color: #087f8c;
+    }
+
+    .step.active span,
+    .step.complete span {
+        background: #087f8c;
+    }
+
+    .step.complete {
+        color: #087f8c;
+    }
+
+    .section-heading h2 {
+        margin-bottom: 6px;
+        color: #183f47;
+        font-size: 25px;
+    }
+
+    .section-heading p {
+        margin-top: 0;
+        color: #6c8186;
+    }
+
+    .symptom-sections,
+    .detail-sections {
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+        margin-top: 25px;
+    }
+
+    .symptom-section,
+    .detail-section {
+        overflow: hidden;
+        border: 1px solid #dce8ea;
+        border-radius: 15px;
+        background: white;
+        box-shadow: 0 4px 14px rgba(18, 77, 90, 0.05);
+    }
+
+    .category-heading,
+    .detail-heading {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 18px 20px;
+        border-bottom: 1px solid #deeaec;
+        background: #edf8f7;
+    }
+
+    .category-icon,
+    .detail-heading > span {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        flex-shrink: 0;
+        border-radius: 12px;
+        background: #087f8c;
+        color: white;
+        font-size: 22px;
+        font-weight: bold;
+    }
+
+    .category-heading h3,
+    .detail-heading h3 {
+        margin: 0 0 3px;
+        color: #164e59;
+        font-size: 20px;
+        font-weight: 750;
+    }
+
+    .category-heading p,
+    .detail-heading p {
+        margin: 0;
+        color: #6b8186;
+        font-size: 14px;
+    }
+
+    .category-options {
+        display: grid;
+        grid-template-columns:
+            repeat(auto-fit, minmax(210px, 1fr));
+        gap: 12px;
+        padding: 20px;
+    }
+
+    .symptom-option {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        min-height: 58px;
+        padding: 12px 14px;
+        border: 2px solid #e1eaec;
+        border-radius: 10px;
+        color: #294f56;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .symptom-option:hover {
+        border-color: #72bbc1;
+        background: #f5fbfb;
+        transform: translateY(-1px);
+    }
+
+    .symptom-option input {
+        position: absolute;
+        opacity: 0;
+    }
+
+    .option-checkbox {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 25px;
+        height: 25px;
+        flex-shrink: 0;
+        border: 2px solid #abc0c4;
+        border-radius: 6px;
+        color: transparent;
+    }
+
+    .symptom-option:has(input:checked) {
+        border-color: #087f8c;
+        background: #eaf9f8;
+    }
+
+    .symptom-option input:checked + .option-checkbox {
+        border-color: #087f8c;
+        background: #087f8c;
+        color: white;
+    }
+
+    .symptom-name {
+        color: #294f56;
+        font-weight: 600;
+    }
+
+    .form-buttons {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 32px;
+    }
+
+    .primary-button,
+    .secondary-button {
+        display: inline-block;
+        padding: 12px 22px;
+        border-radius: 9px;
+        text-decoration: none;
+        font-weight: 650;
+        cursor: pointer;
+    }
+
+    .primary-button {
+        border: none;
+        background: #087f8c;
+        color: white;
+    }
+
+    .primary-button:hover {
+        background: #066b76;
+        color: white;
+    }
+
+    .secondary-button {
+        border: 1px solid #cbdadd;
+        background: white;
+        color: #46656b;
+    }
+
+    .error-message {
+        margin-bottom: 20px;
+        padding: 14px;
+        border-radius: 8px;
+        background: #ffe8e8;
+        color: #a32222;
+    }
+
+    .information-message {
+        margin-top: 20px;
+        padding: 17px;
+        border-radius: 9px;
+        background: #e9f5ff;
+        color: #275c82;
+    }
+
+    @@media (max-width: 700px) {
+        .medical-card {
+            padding: 22px;
+        }
+
+        .steps {
+            flex-direction: column;
+        }
+
+        .medical-header h1 {
+            font-size: 24px;
+        }
+
+        .category-options {
+            grid-template-columns: 1fr;
+        }
+
+        .form-buttons {
+            flex-direction: column;
+        }
+    }
+</style>
